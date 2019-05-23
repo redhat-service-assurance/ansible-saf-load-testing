@@ -1,0 +1,8 @@
+---
+- name: Create security group and rules
+  ec2_group:
+    name: "{{ group.name }}"
+    description: "ServiceAssuranceFramework security group"
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ aws_region }}"
+    rules: "{{ group.rules }}"

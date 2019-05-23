@@ -1,0 +1,44 @@
+# vim: set ft=yaml tabstop=2 shiftwidth=2 :
+---
+
+# name of keypair to create (will use ~/.ssh/id_rsa.pub)
+aws_keypair: lmadsen_cloudops
+aws_default_instance_type: t2.small
+
+# image we want to use for deployment
+# AMI Name: CentOS Linux 7 x86_64 HVM EBS ENA 1901_01-b7ee8a69-ee97-4a49-9e68-afaee216db2e-ami-05713873c6794f575.4
+# Source: aws-marketplace/CentOS Linux 7 x86_64 HVM EBS ENA 1901_01-b7ee8a69-ee97-4a49-9e68-afaee216db2e-ami-05713873c6794f575.4
+aws_image: ami-02eac2c0129f6376b
+aws_region: us-east-1
+wait_for_ssh: False         # mark this true to wait for nodes to have SSH
+
+# list of nodes
+loadtest_nodes:
+  - name: lmadsen-loadtest-1
+    type: tester
+    security_groups:
+      - lmadsen_loadtest_infra
+      - lmadsen_loadtest_internal
+
+# list of security groups
+loadtest_security_groups:
+  - name: lmadsen_loadtest_infra
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 8443
+        to_port: 8443
+        cidr_ip: 0.0.0.0/0
+  - name: lmadsen_loadtest_internal
+    rules:
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+      - proto: all
+        ports:
+          - 0-65535
+        cidr_ip: 10.0.0.0/16

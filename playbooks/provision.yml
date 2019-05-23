@@ -1,0 +1,43 @@
+# vim: set ft=ansible tabstop=2 shiftwidth=2 :
+---
+- name: Setup prerequisite variables
+  hosts: localhost
+  gather_facts: True
+  tasks:
+    - include_tasks: keypair.yml
+
+- name: Create a sandbox instance
+  hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Initialize empty list for provisioned virtual machines
+      set_fact:
+        provisioned_vms: []
+
+    # create our virtual private cloud and networks
+    - include_tasks: vpc.yml
+
+    # setup security groups
+    - include_tasks: security_groups.yml
+      with_items: "{{ loadtest_security_groups }}"
+      loop_control:
+        loop_var: group
+
+    # launch virtual machines
+    - include_tasks: launch.yml
+      with_items: "{{ loadtest_nodes }}"
+      loop_control:
+        loop_var: node
+
+    - set_fact:
+        inventory_nodes: []
+
+    - set_fact:
+        inventory_nodes: "{{ inventory_nodes + [item.tagged_instances.0] }}"
+      with_items: "{{ provisioned_vms }}"
+
+    - debug:
+        var: inventory_nodes
+    #        var: item.tagged_instances.0.public_ip
+    #  with_items: "{{ provisioned_vms }}"
+

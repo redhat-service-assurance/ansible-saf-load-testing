@@ -1,0 +1,51 @@
+
+    - name: Launch instance
+      ec2:
+        key_name: "{{ aws_keypair }}"
+        groups: "{{ node.security_groups }}"
+        instance_type: "{{ node.instance_type | default(aws_default_instance_type) }}"
+        instance_tags:
+          Name: "{{ node.name }}"
+          NodeType: "{{ node.type }}"
+          NetworkSpace: ServiceAssuranceFramework
+          Network: External
+        image: "{{ aws_image }}"
+        wait: true
+        region: "{{ aws_region }}"
+        vpc_subnet_id: "{{ vpc_subnet_id }}"
+        assign_public_ip: no
+        count_tag:
+         Name: "{{ node.name }}"
+        exact_count: 1
+      register: ec2
+
+    - name: Create a volume for persistent storage
+      ec2_vol:
+        instance: "{{ item.id }}"
+        name: storage_volume_{{ node.name }}
+        device_name: /dev/xvdf
+        region: "{{ aws_region }}"
+        volume_size: 20
+        delete_on_termination: yes
+      with_items: "{{ ec2.instances }}"
+      register: ec2_vol
+
+    # build a dictionary of instance attributes
+    - set_fact:
+        provisioned_vms: "{{ provisioned_vms + [ec2] }}"
+
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        groupname: launched
+      with_items: "{{ ec2.instances }}"
+
+    - name: Wait for SSH to come up
+      wait_for:
+        host: "{{ item.public_dns_name }}"
+        port: 22
+        delay: 60
+        timeout: 320
+        state: started
+      with_items: "{{ ec2.instances }}"
+      when: wait_for_ssh
