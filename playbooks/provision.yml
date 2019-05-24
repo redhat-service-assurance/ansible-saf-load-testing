@@ -41,3 +41,15 @@
     #        var: item.tagged_instances.0.public_ip
     #  with_items: "{{ provisioned_vms }}"
 
+    - name: add newly created node to inventory
+      add_host:
+        hostname: 'collectd_node'
+        ansible_host: "{{ inventory_nodes[0].public_ip }}"
+
+- name: deploy collectd + qdrouterd inside sandbox
+  hosts: collectd_node
+  become: yes
+  user: centos
+  tasks:
+    - include_tasks: collectd.yml
+

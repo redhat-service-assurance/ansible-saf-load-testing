@@ -1,0 +1,65 @@
+---
+
+    - name: enable centos-release-rocky
+      package:
+        name: centos-release-openstack-rocky
+        state: installed
+      when: ansible_distribution == 'CentOS'
+
+    - name: install qdrouter
+      package:
+        name: qpid-dispatch-router
+        state: installed
+
+    - name: place config
+      template:
+        src: qdrouterd.conf.j2
+        dest: '/etc/qpid-dispatch/qdrouterd.conf'
+
+    - name: install debugging utils
+      package:
+        name: qpid-dispatch-tools
+        state: installed
+
+    - name: enable qdrouterd service
+      service:
+        name: qdrouterd
+        state: started
+        enabled: true
+
+    - name: install centos-release-opstools
+      package:
+        name: centos-release-opstools
+        state: installed
+      when: ansible_distribution == 'CentOS'
+
+    - name: install collectd-packages
+      package:
+        name: '{{ item }}'
+        state: present
+      with_items: '{{ collectd_plugin_packages }}'
+
+    - name: especially pull in amqp1
+      package:
+        name: 'collectd-amqp1'
+        state: present
+
+    - name: place amqp1 config
+      template:
+        src: amqp1.conf.j2
+        dest: "{{ collectd_conf_dir }}/amqp1.conf"
+
+    - name: set collectd_tcp_network_connect
+      seboolean:
+        name: collectd_tcp_network_connect
+        state: true
+        persistent: true
+      when: >
+        ansible_selinux.status == "enabled" and
+        ansible_selinux.mode in ["enforcing", "permissive"]
+
+    - name: enable collectd service
+      service:
+        name: 'collectd'
+        state: started
+        enabled: true
