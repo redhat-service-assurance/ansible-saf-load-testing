@@ -42,3 +42,10 @@ loadtest_security_groups:
         ports:
           - 0-65535
         cidr_ip: 10.0.0.0/16
+
+
+target_qdr: blue-qdr.sa-telemetry.svc
+collectd_conf_dir: '/etc/collectd.d'
+collectd_plugin_packages:
+  - collectd-disk
+  - collectd-amqp1
